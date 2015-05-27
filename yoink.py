@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import time
+import time, datetime
 import cPickle as pickle
 import json
 import requests
@@ -10,6 +10,8 @@ import re
 import sys
 import argparse
 import sqlite3
+import cgi
+from bs4 import BeautifulSoup
 from os.path import expanduser
 
 ## SAFE TO EDIT ##
@@ -296,8 +298,6 @@ def main():
   def altDownloadMethod(session):
     continueLeeching = True
     page = 1
-    from bs4 import BeautifulSoup
-    import cgi, code, datetime
     while continueLeeching:
       r = session.get("https://what.cd/torrents.php?search=&freetorrent=1" + search_params + "&page={}".format(page), headers=headers)
       document = BeautifulSoup(r.text)
