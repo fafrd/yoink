@@ -292,14 +292,75 @@ def main():
     cur_time = int(time.time())
     oldest_time = cur_time - (int(max_age) * (24 * 60 * 60))
 
+    # alternate download method to get around disabled freeleech filter
+  def altDownloadMethod(session):
+    continueLeeching = True
+    page = 1
+    from bs4 import BeautifulSoup
+    import cgi, code, datetime
+    while continueLeeching:
+      r = session.get("https://what.cd/torrents.php?search=&freetorrent=1" + search_params + "&page={}".format(page), headers=headers)
+      document = BeautifulSoup(r.text)
+      all_links = []
+      torrents = []
+      torrent_time = 0
+
+      if isStorageFull(max_storage) and not add_all_torrents_to_db:
+        continueLeeching = False
+        print 'Your storage equals or exceeds ' + str(max_storage) + 'MB, exiting...'
+        break
+
+      for link in document.find_all('a'):
+          all_links.append(link.get('href'))
+      for url in all_links:
+        if "action=download" in url:
+          torrent = re.split('&', url)[1][3:]
+          torrents.append(torrent)
+
+      if len(torrents) == 0:
+        if page == 1:
+          print '\n'
+          print 'Your search returned 0 results. Please check your filters for conflicts such as FLAC + 320.'
+          print '\n'
+          return
+        else:
+          continueLeeching = False
+          break
+      for torrent in torrents:
+        r = session.get('https://what.cd/ajax.php?action=torrent&id=' + torrent)
+        data = json.loads(r.content)
+        if data['response'] == []:
+          print 'Something went wrong'
+          break
+        torrent_time = data['response']['group']['time']
+        torrent_time = time.mktime(datetime.datetime.strptime(torrent_time, "%Y-%m-%d %H:%M:%S").timetuple())
+        if max_age != False:
+          if int(torrent_time) < oldest_time and not add_all_torrents_to_db:
+            continueLeeching = False
+            break
+        current_artist = data['response']['group']['musicInfo']['artists'][0]['name'][:50]
+        current_year = data['response']['group']['year']
+        current_name = data['response']['group']['name']
+        current_media = data['response']['torrent']['media']
+        current_format = data['response']['torrent']['format']
+        current_encoding = data['response']['torrent']['encoding']
+        fn = clean_fn('{}. {} - {} - {} ({} - {} - {}).torrent'.format(torrent, current_artist, current_year, current_name, current_media, current_format, current_encoding))
+        download_torrent(session, torrent, fn)
+
+      page += 1
+
   continueLeeching = True
   page = 1
   while continueLeeching:
     r = s.get('https://what.cd/ajax.php?action=browse&' + search_params + "&page={}".format(page), headers=headers)
     data = json.loads(r.content)
     if data['response'] == []:
-        print data['status']
-        return
+        if data['status'] == "Freeleech filter disabled.":
+          altDownloadMethod(s)
+          break
+        else:
+          print data['status']
+          return
     for group in data['response']['results']:
       if max_age != False:
         if int(group['groupTime']) < oldest_time and not add_all_torrents_to_db:
