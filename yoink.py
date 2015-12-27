@@ -344,7 +344,7 @@ def main():
         current_media = data['response']['torrent']['media']
         current_format = data['response']['torrent']['format']
         current_encoding = data['response']['torrent']['encoding']
-        fn = clean_fn('{}. {} - {} - {} ({} - {} - {}).torrent'.format(torrent, current_artist, current_year, current_name, current_media, current_format, current_encoding))
+        fn = clean_fn('{}. {} - {} - {} ({} - {} - {}).torrent'.format(torrent.encode('ascii',errors='ignore'), current_artist.encode('ascii',errors='ignore'), current_year, current_name, current_media, current_format, current_encoding))
         download_torrent(session, torrent, fn)
 
       page += 1
