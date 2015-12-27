@@ -5,7 +5,7 @@
 *A Freeleech Torrent Grabber for What.CD*
 ---
 
-Requires python2.7 + pip + `$ pip install requests HTMLParser BeautifulSoup`
+Requires python2.7 + pip + `$ pip install requests HTMLParser BeautifulSoup4`
 
 Usage: `python yoink.py [option]`
 
